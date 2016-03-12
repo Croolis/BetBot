@@ -4,6 +4,8 @@
   "description": "",
   "main": "test.js",
   "dependencies": {
+    "mongodb": "^2.1.7",
+    "mongoose": "^4.4.7",
     "node-telegram-bot-api": "~0.20.1"
   },
   "devDependencies": {},
