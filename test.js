@@ -1,28 +1,29 @@
 var TelegramBot = require('node-telegram-bot-api');
 var token = '183411327:AAFbB_hqhew0k_U2wsHmdrIbCV8ben9DFuE';
-
-var botOptions = {
-    polling: true
-};
-
 var yandexMoney = require("yandex-money-sdk");
 var opener = require("opener");
 var url = require("url")
 var http = require("http")
-// var clientId = "B1C270EDC31592EC510D261646411DBDEB06F0B97508B04804069075B283BCE6"
-var clientId = "007BFBF31D468ED358BDABB338EDD3C0F8F9BA71C6DA8F4535617798A6E0F931"
-// var secret = "A9AFDD4A3C5B13B248808BD3DA1AB7CEF7F1A5FA4497B07D1CD9300723A92E66FC33703AAFB177F83A59D02D74B4D79FA203F35127420FEBFDF9A2409B98EF91"
+var request = require("request")
+var botOptions = {
+    polling: true
+};
+
+
+var clientId = "698B5D63B99F7CD72F0405F045640D408288421914B43D838B3359C70A81228A"
 var secret = null
-var redirectUri = "http://localhost:8000/"
+var redirectUri = "http://localhost:8030/"
+
 
 
 function getToken(code){
   function tokenComplete(err, data) {
+    console.log(err)
       if(err) {
           // process error
           console.log("EGOG")
       }
-      var access_token = data.access_token;
+      //var access_token = data.access_token;
       console.log(data);
   }
   console.log("client id = "+ clientId);
@@ -34,19 +35,37 @@ function getToken(code){
 
 function authorise(clientId, redirectURI, scope, chatId){
     var url = yandexMoney.Wallet.buildObtainTokenUrl(clientId, redirectURI, scope);
+    console.log(url)
     opener(url);
 }
 
 http.createServer(function(req, res) {
-
     var parsedUrl = url.parse(req.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
 
     console.log(JSON.stringify(queryAsObject));
 
     var code = queryAsObject["code"];
-    getToken(code);
-}).listen(8000);
+    console.log("code = "+code)
+    
+    
+    //getToken(code);
+    function tokenComplete(err, data) {
+    console.log(err)
+      if(err) {
+          // process error
+          console.log("EGOG")
+      }
+      //var access_token = data.access_token;
+      var access_token = JSON.parse(data.body).access_token;
+  }
+  var url1 = "https://money.yandex.ru/oauth/token/?code="+code+"&client_id="+clientId+"&grant_type=authorization_code&redirect_uri="+ redirectUri
+  request.get(url1, tokenComplete)
+  console.log("client id = "+ clientId);
+  console.log("code = "+ code);
+  console.log("secret = "+ secret);
+  // yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
+}).listen(8030);
 
 var GlobalStackUsers = new Array();
 
