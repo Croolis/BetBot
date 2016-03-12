@@ -1,0 +1,16 @@
+{
+  "name": "BetBot",
+  "version": "0.0.0",
+  "description": "",
+  "main": "test.js",
+  "dependencies": {
+    "node-telegram-bot-api": "~0.20.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node ./test.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aleksei Samburov, Mary Novikova",
+  "license": "BSD-2-Clause"
+}
