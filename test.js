@@ -1,15 +1,57 @@
 var TelegramBot = require('node-telegram-bot-api');
-
 var token = '183411327:AAFbB_hqhew0k_U2wsHmdrIbCV8ben9DFuE';
 
 var botOptions = {
     polling: true
 };
 
+var yandexMoney = require("yandex-money-sdk");
+var opener = require("opener");
+var url = require("url")
+var http = require("http")
+// var clientId = "B1C270EDC31592EC510D261646411DBDEB06F0B97508B04804069075B283BCE6"
+var clientId = "007BFBF31D468ED358BDABB338EDD3C0F8F9BA71C6DA8F4535617798A6E0F931"
+// var secret = "A9AFDD4A3C5B13B248808BD3DA1AB7CEF7F1A5FA4497B07D1CD9300723A92E66FC33703AAFB177F83A59D02D74B4D79FA203F35127420FEBFDF9A2409B98EF91"
+var secret = null
+var redirectUri = "http://localhost:8000/"
+
+
+function getToken(code){
+  function tokenComplete(err, data) {
+      if(err) {
+          // process error
+          console.log("EGOG")
+      }
+      var access_token = data.access_token;
+      console.log(data);
+  }
+  console.log("client id = "+ clientId);
+  console.log("code = "+ code);
+  console.log("secret = "+ secret);
+  yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
+
+}
+
+function authorise(clientId, redirectURI, scope, chatId){
+    var url = yandexMoney.Wallet.buildObtainTokenUrl(clientId, redirectURI, scope);
+    opener(url);
+}
+
+http.createServer(function(req, res) {
+
+    var parsedUrl = url.parse(req.url, true); // true to get query as object
+    var queryAsObject = parsedUrl.query;
+
+    console.log(JSON.stringify(queryAsObject));
+
+    var code = queryAsObject["code"];
+    getToken(code);
+}).listen(8000);
+
 var GlobalStackUsers = new Array();
 
 var bot = new TelegramBot(token, botOptions);
- 
+
 bot.getMe().then(function(me)
 {
     console.log('Hello! My name is %s!', me.first_name);
@@ -17,8 +59,6 @@ bot.getMe().then(function(me)
     console.log('And my username is @%s.', me.username);
 
 });
- 
-
 
 // Работа с mongo.db
     var mongoose = require('mongoose');
@@ -34,8 +74,6 @@ bot.getMe().then(function(me)
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
-
-
 
 // Конец работы с mongo.db
 
@@ -70,6 +108,10 @@ bot.on('text', function(msg)
 
     if ((messageText == "Хочу поспорить") || (messageText == "xочу поспорить.") || (messageText == "хочу поспорить") || (messageText == "Хочу поспорить.")) {
         sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
+    }
+
+    if (messageText == "auth") {
+        authorise(clientId, redirectUri, ["account-info"], NaN);
     }
 
     console.log(msg);
