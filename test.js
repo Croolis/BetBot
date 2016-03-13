@@ -35,6 +35,7 @@ function authorise(clientId, redirectURI, scope, chatId){
 }
 
 function createNewUser(access_token){
+    if(access_token == null) return;
     var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
         new_user.save(function(err, new_account) {
             if (err) return console.error(err);
@@ -46,7 +47,7 @@ function createNewUser(access_token){
 http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
-    print("govno")
+
     console.log(JSON.stringify(queryAsObject));
 
     var code = queryAsObject["code"];
