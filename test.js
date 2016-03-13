@@ -5,6 +5,9 @@ var opener = require("opener");
 var url = require("url")
 var http = require("http")
 var request = require("request")
+var botOptions = {
+    polling: true
+};
 
 
 var messageChatId = null;
@@ -13,15 +16,16 @@ var messageDate = null;
 var messageUsr = null;
 var messageUsrId = null;
 var messageUsrLastName = null;
+var access_token = null;
 
 
-var botOptions = {
-    polling: true
-};
+
 
 var clientId = "698B5D63B99F7CD72F0405F045640D408288421914B43D838B3359C70A81228A"
 var secret = null
 var redirectUri = "http://localhost:8030/"
+
+
 
 function authorise(clientId, redirectURI, scope, chatId){
     var url = yandexMoney.Wallet.buildObtainTokenUrl(clientId, redirectURI, scope);
@@ -29,37 +33,7 @@ function authorise(clientId, redirectURI, scope, chatId){
     sendMessageByBot(messageChatId, url)
 }
 
-function createNewUser(access_token){
-    if (access_token == null)
-        return;
-    console.log("access_token = "+ access_token)
-    User.find({id: messageUsrId}, function(err, users){
-        if(err){
-            return console.error(err)
-        }
-        if(users.count == 0){
-            var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
-            new_user.save(function(err, new_account){
-                if (err){
-                    return console.error(err)
-                }else{
-                    console.log("new user created succesfully")
-                }
-            })
-        }else{
-            for (var user in users){
-                user.access_token = access_token
-                user.save(function(err, new_account){
-                    if (err) console.error(err)
-                })
-            }
-        } 
-    })
-
-}
-
-
-
+  
 
 http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true); // true to get query as object
@@ -78,10 +52,15 @@ http.createServer(function(req, res) {
           console.log("EGOG")
       }
       //var access_token = data.access_token;
-      var access_token = JSON.parse(data.body).access_token;
-      createNewUser(access_token);
+      access_token = JSON.parse(data.body).access_token;
+      console.log("access_token = "+ access_token)
+        var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
+                    id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0, create_bet: 0, acceess_token: access_token});
+        new_user.save();
 
   }
+
+
 
   var url1 = "https://money.yandex.ru/oauth/token/?code="+code+"&client_id="+clientId+"&grant_type=authorization_code&redirect_uri="+ redirectUri
   request.get(url1, tokenComplete)
@@ -111,12 +90,12 @@ bot.getMe().then(function(me)
         last_name: String,
         id: Number,
         chat_id: Number,
-        access_token: String,
         create_bet: Number,
         cur_bet_state: Number,
         cur_bet_money: Number,
         _cur_bet_op: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
-        cur_bet_text: String
+        cur_bet_text: String,
+        access_token: String
     });
     var User = mongoose.model('User', userShema);
 
@@ -145,16 +124,6 @@ bot.on('text', function(msg)
     var messageUsr = msg.from.first_name;
     var messageUsrId = msg.from.id;
     
-    User.find({id: messageUsrId}, function(err, users) {
-        if (err) return console.error(err);
-            for (var user in users){
-                if (user.access_token = null){
-                    sendMessageByBot(messageChatId, "You seem unauthorised");
-                    authorise(clientId, redirectUri, ["account-info"], NaN);
-                }
-            }
-        });
-
     if (messageText === 'ping') {
         sendMessageByBot(messageChatId, 'pong');
     }
@@ -163,8 +132,9 @@ bot.on('text', function(msg)
         
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
+            console.log(users.length);
             if (users.length == 0) {
-                authorise(clientId, redirectUri, ["account-info"], messageChatId);
+                authotise(clientId, redirectUri, ["account-info"], chatId)
             }
         });
 
