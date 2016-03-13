@@ -105,8 +105,6 @@ bot.getMe().then(function(me)
         condition: Number
     });
     var Bet = mongoose.model('Bet', betShema);
->>>>>>> 5297aeb9c6245a5df5a0f8f0d619e0e4cf455a6e
-
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));

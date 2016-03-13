@@ -7,8 +7,9 @@
     "mongodb": "~2.1.7",
     "mongoose": "~4.4.7",
     "node-telegram-bot-api": "~0.20.1",
-    "yandex-money-sdk": "~0.1.6",
-    "opener": "~1.4.1"
+    "opener": "~1.4.1",
+    "request": "^2.69.0",
+    "yandex-money-sdk": "~0.1.6"
   },
   "devDependencies": {},
   "scripts": {
