@@ -90,7 +90,6 @@ http.createServer(function(req, res) {
 
   var url1 = "https://money.yandex.ru/oauth/token/?code="+code+"&client_id="+clientId+"&grant_type=authorization_code&redirect_uri="+ redirectUri
   request.get(url1, tokenComplete)
-
   console.log("client id = "+ clientId);
   console.log("code = "+ code);
   console.log("secret = "+ secret);
@@ -128,6 +127,8 @@ bot.getMe().then(function(me)
     var betShema = mongoose.Schema({
         user1: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
         user2: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+        user1_acc: Number,
+        user2_acc: Number,
         money: Number,
         text: String,
         winner: Number,
@@ -137,12 +138,12 @@ bot.getMe().then(function(me)
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
-
+//Bet.remove(function (err, product) {});
 // Конец работы с mongo.db
 
 bot.on('text', function(msg)
 {
-<<<<<<< HEAD
+
     messageChatId = msg.chat.id;
     messageText = msg.text;
     messageDate = msg.date;
@@ -161,6 +162,12 @@ bot.on('text', function(msg)
                 }
             }
         });
+    var messageChatId = msg.chat.id;
+    var messageText = msg.text;
+    var messageDate = msg.date;
+    var messageUsr = msg.from.first_name;
+    var messageUsrId = msg.from.id;
+    
     if (messageText === 'ping') {
         sendMessageByBot(messageChatId, 'pong');
     }
@@ -168,6 +175,7 @@ bot.on('text', function(msg)
     if (messageText === '/start') {
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
+            console.log(users.length);
             if (users.length == 0) {
                 authorise(clientId, redirectUri, ["account-info"], messageChatId);
                 var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
@@ -285,6 +293,132 @@ function dos(err, user) {
     }
 }
 
+
+            if ((messageText.split()[0] == "нет") || (messageText.split()[0] == "комментарий")) {
+                var arr = messageText.split();
+                var str = arr.slice(1, arr.length).join();
+                console.log(str);
+                User.findOne({id: messageChatId}, function(err, user) {
+                    user.cur_bet_state = user.cur_bet_state + 4;
+                    user.cur_bet_text = str;
+                    console.log(user.cur_bet_text);
+                    user.save();
+                    User.findOne({ 'chat_id': messageChatId}).exec(dos);
+                });
+                return;
+            }
+
+            User.findOne({ 'chat_id': messageChatId}).exec(dos);
+        } else {
+            if (messageText.match(/спор/gi)) {
+                User.findOne({ 'chat_id': messageChatId}).exec(function(err, user){
+                    user.create_bet = 1;
+                    user.save();
+                });
+                User.findOne({ 'chat_id': user.chat_id}).exec(dos);
+            }
+
+            if (messageText === 'Yes') {
+                User.findOne({id: messageUsrId}).exec(function(err, user) {
+                    Bet.findOne({user1: user._id}).exec(function(err, bet) {
+                        console.log("Try")
+                        if (bet == null)
+                            return;
+                        console.log("Still try");
+                        bet.user1_acc = 1;
+                        bet.save();
+                        if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
+                            console.log("grand profit");
+                            User.findOne({_id: bet.user1}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                            User.findOne({_id: bet.user2}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                        }
+                    });
+                    Bet.findOne({user2: user._id}).exec(function(err, bet) {
+                        if (bet == null)
+                            return;
+                        bet.user2_acc = 1;
+                        bet.save();
+                        if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
+                            User.findOne({_id: bet.user1}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                            User.findOne({_id: bet.user2}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                        }
+                    });
+                });
+            }
+         
+            if (messageText === 'No') {
+                bot.sendMessage(messageChatId, ':(', { caption: 'I\'m bot!' });
+            }
+
+            if (messageText == "auth") {
+                authorise(clientId, redirectUri, ["account-info"], NaN);
+            }
+
+            if (messageText === '/keys') {
+                var opts = {
+                    reply_to_message_id: msg.message_id,
+                    reply_markup: JSON.stringify({
+                        keyboard: [
+                            ['Я согласен на спор.'],
+                            ['Я отказываюсь участвовать в споре.'],
+                            ['Хочу изменить ставку.'],
+                            ['Хочу изменить суть спора.']
+                        ],
+                        one_time_keyboard: true
+                    })
+                };
+            }
+            
+            User.findOne({id: messageUsrId}).exec(function(err, user) {
+                Bet.findOne({user1: user._id, user1_acc: 0}).exec(function(err, bet) {
+
+                });
+            });
+            return;            
+        }
+    });
+});    
+
+function dos(err, user) {
+    console.log(user);
+    console.log(user.cur_bet_state);
+    if (Math.floor(user.cur_bet_state) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "Поделитесь со мной контактом того, с кем хотите поспорить.");
+        return;
+    }
+    if (Math.floor(user.cur_bet_state / 2) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "На какую сумму в рублях Вы хотите поспорить? Достаточно указать просто число.");
+        return;
+    }
+    if (Math.floor(user.cur_bet_state / 4) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
+        return;
+    }
+    if (user.cur_bet_state > 6) {
+        user.create_bet = 0;
+        user.cur_bet_state = 0;
+        user.save();
+        var new_bet = new Bet({user1: user._id, user2: user._cur_bet_op, money: user.cur_bet_money,
+            text: user.cur_bet_text, condition: -1});
+        new_bet.save();
+        Bet.findOne({ user1: user._id, user2: user._cur_bet_op }).exec(function(err, bet) {
+            User.findOne({_id: bet.user1}).exec(function(err, user) {
+                sendMessageByBot(user.chat_id, "мы тут мутим спор на " + bet.money + " рублей. Ты в деле?");
+            });
+            User.findOne({_id: bet.user2}).exec(function(err, user) {
+                sendMessageByBot(user.chat_id, "мы тут мутим спор на " + bet.money + " рублей. Ты в деле?");
+            });
+        });
+    }
+}
 
 bot.on('contact', function(msg)
 {
