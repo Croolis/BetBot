@@ -23,7 +23,7 @@ var botOptions = {
 
 var clientId = "698B5D63B99F7CD72F0405F045640D408288421914B43D838B3359C70A81228A"
 var secret = null
-var redirectUri = "http://localhost:8030/"
+var redirectUri = "http://37.139.30.225:8030/"
 
 
 
@@ -40,7 +40,7 @@ function createNewUser(access_token){
             if (err) return console.error(err);
             else console.log("user created sucesfully")
                 });
-        console.log("access_token = "+access_token)
+        console.log("access_token = "+)
 }
 
 http.createServer(function(req, res) {
