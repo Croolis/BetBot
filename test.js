@@ -38,6 +38,7 @@ function createNewUser(access_token){
     var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
         new_user.save(function(err, new_account) {
             if (err) return console.error(err);
+            else console.log("user created sucesfully")
                 });
 }
 
