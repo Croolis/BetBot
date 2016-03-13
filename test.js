@@ -108,7 +108,7 @@ bot.getMe().then(function(me)
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
-User.remove(function (err, product) {});
+//Bet.remove(function (err, product) {});
 // Конец работы с mongo.db
 
 bot.on('text', function(msg)
@@ -175,25 +175,28 @@ bot.on('text', function(msg)
             User.findOne({ 'chat_id': messageChatId}).exec(dos);
         } else {
             if (messageText.match(/спор/gi)) {
-                sendMessageByBot(messageChatId, "Введите некоторые данные для начала спора.");
                 User.findOne({ 'chat_id': messageChatId}).exec(function(err, user){
                     user.create_bet = 1;
                     user.save();
                 });
+                User.findOne({ 'chat_id': user.chat_id}).exec(dos);
             }
 
             if (messageText === 'Yes') {
                 User.findOne({id: messageUsrId}).exec(function(err, user) {
                     Bet.findOne({user1: user._id}).exec(function(err, bet) {
+                        console.log("Try")
                         if (bet == null)
                             return;
+                        console.log("Still try");
                         bet.user1_acc = 1;
                         bet.save();
                         if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
-                            User.findOne({id: bet.user1}).exec(function(err, user) {
+                            console.log("grand profit");
+                            User.findOne({_id: bet.user1}).exec(function(err, user) {
                                 bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
                             });
-                            User.findOne({id: bet.user2}).exec(function(err, user) {
+                            User.findOne({_id: bet.user2}).exec(function(err, user) {
                                 bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
                             });
                         }
@@ -204,16 +207,15 @@ bot.on('text', function(msg)
                         bet.user2_acc = 1;
                         bet.save();
                         if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
-                            User.findOne({id: bet.user1}).exec(function(err, user) {
+                            User.findOne({_id: bet.user1}).exec(function(err, user) {
                                 bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
                             });
-                            User.findOne({id: bet.user2}).exec(function(err, user) {
+                            User.findOne({_id: bet.user2}).exec(function(err, user) {
                                 bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
                             });
                         }
                     });
                 });
-                bot.sendMessage(messageChatId, 'I\'m too love you!', { caption: 'I\'m bot!' });
             }
          
             if (messageText === 'No') {
