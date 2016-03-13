@@ -5,9 +5,20 @@ var opener = require("opener");
 var url = require("url")
 var http = require("http")
 var request = require("request")
+
+
+var messageChatId = null;
+var messageText = null;
+var messageDate = null;
+var messageUsr = null;
+var messageUsrId = null;
+var messageUsrLastName = null;
+
+
 var botOptions = {
     polling: true
 };
+
 
 
 var clientId = "698B5D63B99F7CD72F0405F045640D408288421914B43D838B3359C70A81228A"
@@ -16,27 +27,18 @@ var redirectUri = "http://localhost:8030/"
 
 
 
-function getToken(code){
-  function tokenComplete(err, data) {
-    console.log(err)
-      if(err) {
-          // process error
-          console.log("EGOG")
-      }
-      //var access_token = data.access_token;
-      console.log(data);
-  }
-  console.log("client id = "+ clientId);
-  console.log("code = "+ code);
-  console.log("secret = "+ secret);
-  yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
-
-}
 
 function authorise(clientId, redirectURI, scope, chatId){
     var url = yandexMoney.Wallet.buildObtainTokenUrl(clientId, redirectURI, scope);
     console.log(url)
-    opener(url);
+    sendMessageByBot(messageChatId, url)
+}
+
+function createNewUser(access_token){
+    var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
+        new_user.save(function(err, new_account) {
+            if (err) return console.error(err);
+                });
 }
 
 http.createServer(function(req, res) {
@@ -58,9 +60,15 @@ http.createServer(function(req, res) {
       }
       //var access_token = data.access_token;
       var access_token = JSON.parse(data.body).access_token;
+      createNewUser(access_token);
+
   }
+
+
+
   var url1 = "https://money.yandex.ru/oauth/token/?code="+code+"&client_id="+clientId+"&grant_type=authorization_code&redirect_uri="+ redirectUri
   request.get(url1, tokenComplete)
+
   console.log("client id = "+ clientId);
   console.log("code = "+ code);
   console.log("secret = "+ secret);
@@ -86,7 +94,8 @@ bot.getMe().then(function(me)
         first_name: String,
         last_name: String,
         id: Number,
-        chat_id: Number
+        chat_id: Number,
+        access_token: String
     })
 
     var User = mongoose.model('User', userShema);
@@ -98,11 +107,12 @@ bot.getMe().then(function(me)
 
 bot.on('text', function(msg)
 {
-    var messageChatId = msg.chat.id;
-    var messageText = msg.text;
-    var messageDate = msg.date;
-    var messageUsr = msg.from.first_name;
-    var messageUsrId = msg.from.id;
+    messageChatId = msg.chat.id;
+    messageText = msg.text;
+    messageDate = msg.date;
+    messageUsr = msg.from.first_name;
+    messageUsrLastName = msg.from.last_name;
+    messageUsrId = msg.from.id;
 
     var number;
     
@@ -115,10 +125,7 @@ bot.on('text', function(msg)
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
             if (users.length == 0) {
-                var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, id: msg.from.id, chat_id: msg.chat.id});
-                new_user.save(function(err, new_account) {
-                    if (err) return console.error(err);
-                });
+                authorise(clientId, redirectUri, ["account-info"], messageChatId);
             }
         });
 
@@ -136,10 +143,11 @@ bot.on('text', function(msg)
     console.log(msg);
 });
 
+
 bot.on('contact', function(msg)
 {
     var messageUsrFirstName = msg.from.first_name;
-    var messageUsrLastName = msg.from.last_name;
+    messageUsrLastName = msg.from.last_name;
     var messageUsrId = msg.from.id;
     var messageChatId = msg.chat.id;
     var rivalId = msg.contact.user_id;
