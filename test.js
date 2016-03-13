@@ -123,7 +123,6 @@ http.createServer(function(req, res) {
   // yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
 }).listen(8000);
 
-var GlobalStackUsers = new Array();
 
 var bot = new TelegramBot(token, botOptions);
 
@@ -179,7 +178,6 @@ bot.on('text', function(msg)
     }
 
     if (messageText === '/start') {
-
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
             if (users.length == 0) {
@@ -190,16 +188,8 @@ bot.on('text', function(msg)
         sendMessageByBot(messageChatId, 'Привет, ' + messageUsr + '! Меня зовут Bet bot, и я помогаю людям решать их денежные споры. Так же мы можем поиграть в игру ping-pong. Напиши мне ping.');
     }
 
-    if ((messageText == "Хочу поспорить") || (messageText == "xочу поспорить.") || (messageText == "хочу поспорить") || (messageText == "Хочу поспорить.")) {
-        sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
-    }
 
-    if (messageText == "auth") {
-        authorise(clientId, redirectUri, ["account-info"], NaN);
-    }
 
-    console.log(msg);
-});
 
 
 bot.on('contact', function(msg)
@@ -222,7 +212,6 @@ bot.on('contact', function(msg)
         }
     })
 
-    console.log(msg);
 }); 
 
  
