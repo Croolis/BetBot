@@ -31,6 +31,19 @@ bot.getMe().then(function(me)
     })
 
     var User = mongoose.model('User', userShema);
+
+    var betShema = mongoose.Schema({
+        user1: [User],
+        user2: [User],
+        money: Number,
+        text: String,
+        winner: [User],
+        luser: [User],
+        condition: Number
+    })
+
+    var Bet = mongoose.model('Bet', betShema)
+
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
@@ -72,6 +85,32 @@ bot.on('text', function(msg)
         sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
     }
 
+    //dfghjk
+    if (messageText === '/keys') {
+        var opts = {
+            reply_to_message_id: msg.message_id,
+            reply_markup: JSON.stringify({
+                keyboard: [
+                    ['Я согласен на спор.'],
+                    ['Я отказываюсь участвовать в споре.'],
+                    ['Хочу изменить ставку.'],
+                    ['Хочу изменить суть спора.']
+                ],
+                one_time_keyboard: true
+            })
+        };
+        bot.sendMessage(messageChatId, 'Вы принимаете условия спора?', opts);
+    }
+ 
+    if (messageText === 'Yes') {
+        bot.sendMessage(messageChatId, 'I\'m too love you!', { caption: 'I\'m bot!' });
+    }
+ 
+    if (messageText === 'No') {
+        bot.sendMessage(messageChatId, ':(', { caption: 'I\'m bot!' });
+    }
+    //fghjk
+
     console.log(msg);
 });
 
@@ -97,6 +136,35 @@ bot.on('contact', function(msg)
 
     console.log(msg);
 }); 
+
+var stickersList = [
+    'BQADAgADIQADyIsGAAG5wgjAzH3ayQI',
+    'BQADAgAD0g8AAkKvaQABg2sLLDKRiooC',
+    'BQADAgADyg8AAkKvaQAB4OnE1MPuMzwC'
+];
+
+bot.on('sticker', function(msg)
+{
+    var messageChatId = msg.chat.id;
+    var messageStickerId = msg.sticker.file_id;
+    var messageDate = msg.date;
+    var messageUsr = msg.from.username;
+ 
+    sendStickerByBot(messageChatId, stickersList[getRandomInt(0, stickersList.length)]);
+ 
+    console.log(msg);
+});
+ 
+ var aMin
+function getRandomInt(aMin, aMax)
+{
+    return Math.floor(Math.random() * (aMax - aMin)) + aMin;
+}
+ 
+function sendStickerByBot(aChatId, aStickerId)
+{
+    bot.sendSticker(aChatId, aStickerId, { caption: 'I\'m a cute bot!' });
+}
 
  
 function sendMessageByBot(aChatId, aMessage)
