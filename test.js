@@ -67,7 +67,6 @@ http.createServer(function(req, res) {
   // yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
 }).listen(8030);
 
-var GlobalStackUsers = new Array();
 
 var bot = new TelegramBot(token, botOptions);
 
@@ -83,7 +82,6 @@ bot.getMe().then(function(me)
     var mongoose = require('mongoose');
 
     var userShema = mongoose.Schema({
-        _id: mongoose.Schema.Types.ObjectId,
         first_name: String,
         last_name: String,
         id: Number,
@@ -111,7 +109,6 @@ bot.getMe().then(function(me)
 
 // Конец работы с mongo.db
 
-
 bot.on('text', function(msg)
 {
     var messageChatId = msg.chat.id;
@@ -130,9 +127,7 @@ bot.on('text', function(msg)
             if (users.length == 0) {
                 var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
                     id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0, create_bet: 0});
-                new_user.save(function(err, new_account) {
-                    if (err) return console.error(err);
-                });
+                new_user.save();
             }
         });
 
@@ -140,6 +135,12 @@ bot.on('text', function(msg)
     }
 
     User.findOne({id: messageUsrId}).exec(function(err, user) {
+        if (user == null) {
+            var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
+                    id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0, create_bet: 0});
+            new_user.save();
+            return;
+        }
         if (user.create_bet != 0) {
             if (messageText.match(/^\d+$/)) {
                 sendMessageByBot(messageChatId, "Вы будете спорить на " + messageText + " рублей. Потерпите, осталось совсем немного.");
@@ -284,7 +285,7 @@ bot.on('contact', function(msg)
         }
     })
 
-    console.log(msg);
+    //console.log(msg);
 }); 
 
 var stickersList = [
