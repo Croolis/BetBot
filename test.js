@@ -1,5 +1,5 @@
 var TelegramBot = require('node-telegram-bot-api');
-var token = null;
+var token = '183411327:AAFbB_hqhew0k_U2wsHmdrIbCV8ben9DFuE';
 var yandexMoney = require("yandex-money-sdk");
 var opener = require("opener");
 var url = require("url")
@@ -40,8 +40,7 @@ function createNewUser(access_token){
             if (err) return console.error(err);
             else console.log("user created sucesfully")
                 });
-        token = access_token
-        console.log("token = " + token)
+        console.log("access_token = "+access_token)
 }
 
 http.createServer(function(req, res) {
