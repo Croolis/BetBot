@@ -46,7 +46,7 @@ function createNewUser(access_token){
 http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
-
+    print("govno")
     console.log(JSON.stringify(queryAsObject));
 
     var code = queryAsObject["code"];
