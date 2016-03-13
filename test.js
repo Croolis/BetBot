@@ -34,27 +34,60 @@ function authorise(clientId, redirectURI, scope, chatId){
     sendMessageByBot(messageChatId, url)
 }
 
-function createNewUser(access_token){
-    if(access_token == null) return;
-    User.find({id: messageUsrId}, function(err, users) {
-            if (err) return console.error(err);
-            if(users.count == 0){
-        var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
-            new_user.save(function(err, new_account) {
-                if (err) return console.error(err);
-                else console.log("user created sucesfully")
-                    });
-            console.log("access_token = "+ access_token)
-        }else{
-            for each (user in users){
-                user.access_token = access_token
-                user.save(function(err, new_account) {
-                if (err) return console.error(err);})
-            }
-        }
-    }
-}
+// function createNewUser(access_token){
+//     if(access_token == null) return;
+//     User.find({id: messageUsrId}, function(err, users) {
+//             if (err) return console.error(err);
+//             if(users.count == 0){
+//                 var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
+//                 new_user.save(function(err, new_account) {
+//                     if (err) {
+//                         return console.error(err);
+//                     }else{
+//                          console.log("user created sucesfully")
+//                     }});
+//             console.log("access_token = "+ access_token)
+//             }else{
+//                 for (var user in users){
+//                     user.access_token = access_token
+//                     user.save(function(err, new_account) {
+//                         if (err) 
+//                             return console.error(err);
+//                     })
+//                 }
+//             }
+//         }
+//     }
+// }
 
+function createNewUser(access_token){
+    if (access_token == null)
+        return;
+    console.log("access_token = "+ access_token)
+    User.find({id: messageUsrId}, function(err, users){
+        if(err){
+            return console.error(err)
+        }
+        if(users.count == 0){
+            var new_user = new User({first_name: messageUsr, last_name: messageUsrLastName, id: messageUsrId, chat_id: messageChatId, access_token: access_token});
+            new_user.save(function(err, new_account){
+                if (err){
+                    return console.error(err)
+                }else{
+                    console.log("new user created succesfully")
+                }
+            })
+        }else{
+            for (var user in users){
+                user.access_token = access_token
+                user.save(function(err, new_account){
+                    if (err) console.error(err)
+                })
+            }
+        } 
+    })
+
+}
 http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
@@ -131,7 +164,7 @@ bot.on('text', function(msg)
 
     User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
-            for each (user in users){
+            for (var user in users){
                 if (user.access_token = null){
                     sendMessageByBot(messageChatId, "You seem unauthorised");
                     authorise(clientId, redirectUri, ["account-info"], NaN);
