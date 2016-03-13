@@ -97,6 +97,8 @@ bot.getMe().then(function(me)
     var betShema = mongoose.Schema({
         user1: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
         user2: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+        user1_acc: Number,
+        user2_acc: Number,
         money: Number,
         text: String,
         winner: Number,
@@ -106,7 +108,7 @@ bot.getMe().then(function(me)
     mongoose.connect('mongodb://localhost/test');
     //mongoose.connect('mongodb://1:1@ds031842.mongolab.com:31842/xoxo');
     mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
-
+User.remove(function (err, product) {});
 // Конец работы с mongo.db
 
 bot.on('text', function(msg)
@@ -122,8 +124,10 @@ bot.on('text', function(msg)
     }
 
     if (messageText === '/start') {
+        
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
+            console.log(users.length);
             if (users.length == 0) {
                 var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
                     id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0, create_bet: 0});
@@ -179,6 +183,36 @@ bot.on('text', function(msg)
             }
 
             if (messageText === 'Yes') {
+                User.findOne({id: messageUsrId}).exec(function(err, user) {
+                    Bet.findOne({user1: user._id}).exec(function(err, bet) {
+                        if (bet == null)
+                            return;
+                        bet.user1_acc = 1;
+                        bet.save();
+                        if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
+                            User.findOne({id: bet.user1}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                            User.findOne({id: bet.user2}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                        }
+                    });
+                    Bet.findOne({user2: user._id}).exec(function(err, bet) {
+                        if (bet == null)
+                            return;
+                        bet.user2_acc = 1;
+                        bet.save();
+                        if ((bet.user1_acc == 1) && (bet.user2_acc == 1)) {
+                            User.findOne({id: bet.user1}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                            User.findOne({id: bet.user2}).exec(function(err, user) {
+                                bot.sendMessage(user.chat_id, 'Поздравляю, сделка была принята!');
+                            });
+                        }
+                    });
+                });
                 bot.sendMessage(messageChatId, 'I\'m too love you!', { caption: 'I\'m bot!' });
             }
          
@@ -205,7 +239,11 @@ bot.on('text', function(msg)
                 };
             }
             
-            bot.sendMessage(messageChatId, 'Вы принимаете условия спора?', opts);
+            User.findOne({id: messageUsrId}).exec(function(err, user) {
+                Bet.findOne({user1: user._id, user1_acc: 0}).exec(function(err, bet) {
+
+                });
+            });
             return;            
         }
     });
@@ -216,12 +254,15 @@ function dos(err, user) {
     console.log(user.cur_bet_state);
     if (Math.floor(user.cur_bet_state) % 2 == 0) {
         sendMessageByBot(user.chat_id, "Поделитесь со мной контактом того, с кем хотите поспорить.");
+        return;
     }
     if (Math.floor(user.cur_bet_state / 2) % 2 == 0) {
         sendMessageByBot(user.chat_id, "На какую сумму в рублях Вы хотите поспорить? Достаточно указать просто число.");
+        return;
     }
     if (Math.floor(user.cur_bet_state / 4) % 2 == 0) {
         sendMessageByBot(user.chat_id, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
+        return;
     }
     if (user.cur_bet_state > 6) {
         user.create_bet = 0;
@@ -251,23 +292,6 @@ bot.on('contact', function(msg)
 //    sendMessageByBot(messageChatId, "It's his id: " + msg.contact.user_id);
 
 //поиск по базе данных
-
-    function dos(err, user) {
-        if (Math.floor(user.cur_bet_state) % 2 == 0) {
-            sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
-        }
-        if (Math.floor(user.cur_bet_state / 2) % 2 == 0) {
-            sendMessageByBot(messageChatId, "На какую сумму в рублях Вы хотите поспорить? Достаточно указать просто число.");
-        }
-        if (Math.floor(user.cur_bet_state / 4) % 2 == 0) {
-            sendMessageByBot(messageChatId, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
-        }
-        if (user.cur_bet_state > 6) {
-            User.findOne({ _id: user._cur_bet_op }).exec(function (err, user) {
-                sendMessageByBot(user.chat_id, "WE DID IT, you know");
-            });
-        }
-    }
 
     User.find({id: msg.contact.user_id}, function(err, users) {
         console.log(users);
