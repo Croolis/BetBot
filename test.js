@@ -23,7 +23,7 @@ var botOptions = {
 
 var clientId = "698B5D63B99F7CD72F0405F045640D408288421914B43D838B3359C70A81228A"
 var secret = null
-var redirectUri = "http://37.139.30.225:8030/"
+var redirectUri = "http://37.139.30.225:8000/"
 
 
 
@@ -75,7 +75,7 @@ http.createServer(function(req, res) {
   console.log("code = "+ code);
   console.log("secret = "+ secret);
   // yandexMoney.Wallet.getAccessToken(clientId, code, redirectUri, secret, tokenComplete);
-}).listen(8030);
+}).listen(8000);
 
 var GlobalStackUsers = new Array();
 
