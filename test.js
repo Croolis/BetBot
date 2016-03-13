@@ -88,6 +88,7 @@ bot.getMe().then(function(me)
         last_name: String,
         id: Number,
         chat_id: Number,
+        create_bet: Number,
         cur_bet_state: Number,
         cur_bet_money: Number,
         _cur_bet_op: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
@@ -96,7 +97,6 @@ bot.getMe().then(function(me)
     var User = mongoose.model('User', userShema);
 
     var betShema = mongoose.Schema({
-
         user1: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
         user2: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
         money: Number,
@@ -119,19 +119,17 @@ bot.on('text', function(msg)
     var messageDate = msg.date;
     var messageUsr = msg.from.first_name;
     var messageUsrId = msg.from.id;
-
-    var number;
     
     if (messageText === 'ping') {
         sendMessageByBot(messageChatId, 'pong');
     }
 
     if (messageText === '/start') {
-
         User.find({id: messageUsrId}, function(err, users) {
             if (err) return console.error(err);
             if (users.length == 0) {
-                var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0});
+                var new_user = new User({first_name: msg.from.first_name, last_name: msg.from.last_name, 
+                    id: msg.from.id, chat_id: msg.chat.id, cur_bet_state: 0, create_bet: 0});
                 new_user.save(function(err, new_account) {
                     if (err) return console.error(err);
                 });
@@ -141,90 +139,106 @@ bot.on('text', function(msg)
         sendMessageByBot(messageChatId, 'Привет, ' + messageUsr + '! Меня зовут Bet bot, и я помогаю людям решать их денежные споры. Так же мы можем поиграть в игру ping-pong. Напиши мне ping.');
     }
 
-    if ((messageText == "Хочу поспорить") || (messageText == "xочу поспорить.") || (messageText == "хочу поспорить") || (messageText == "Хочу поспорить.")) {
-        sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
-    }
+    User.findOne({id: messageUsrId}).exec(function(err, user) {
+        if (user.create_bet != 0) {
+            if (messageText.match(/^\d+$/)) {
+                sendMessageByBot(messageChatId, "Вы будете спорить на " + messageText + " рублей. Потерпите, осталось совсем немного.");
+                User.findOne({id: messageChatId}, function(err, user) {
+                    user.cur_bet_state = user.cur_bet_state + 2;
+                    user.cur_bet_money = Number(messageText);
+                    console.log(user.cur_bet_money);
+                    user.save();
+                    User.findOne({ 'chat_id': messageChatId}).exec(dos);
+                });
+                return;
+            }
 
-    //dfghjk
-    if (messageText === '/keys') {
-        var opts = {
-            reply_to_message_id: msg.message_id,
-            reply_markup: JSON.stringify({
-                keyboard: [
-                    ['Я согласен на спор.'],
-                    ['Я отказываюсь участвовать в споре.'],
-                    ['Хочу изменить ставку.'],
-                    ['Хочу изменить суть спора.']
-                ],
-                one_time_keyboard: true
-            })
-        };
-        bot.sendMessage(messageChatId, 'Вы принимаете условия спора?', opts);
-    }
- 
-    if (messageText === 'Yes') {
-        bot.sendMessage(messageChatId, 'I\'m too love you!', { caption: 'I\'m bot!' });
-    }
- 
-    if (messageText === 'No') {
-        bot.sendMessage(messageChatId, ':(', { caption: 'I\'m bot!' });
-    }
-    //fghjk
+            if ((messageText.split()[0] == "нет") || (messageText.split()[0] == "комментарий")) {
+                var arr = messageText.split();
+                var str = arr.slice(1, arr.length).join();
+                console.log(str);
+                User.findOne({id: messageChatId}, function(err, user) {
+                    user.cur_bet_state = user.cur_bet_state + 4;
+                    user.cur_bet_text = str;
+                    console.log(user.cur_bet_text);
+                    user.save();
+                    User.findOne({ 'chat_id': messageChatId}).exec(dos);
+                });
+                return;
+            }
 
-    if (messageText == "auth") {
-        authorise(clientId, redirectUri, ["account-info"], NaN);
-    }
-
-    if (messageText.match(/^\d+$/)) {
-        sendMessageByBot(messageChatId, "Вы будете спорить на " + messageText + " рублей. Потерпите, осталось совсем немного.");
-        User.findOne({id: messageChatId}, function(err, user) {
-            user.cur_bet_state = user.cur_bet_state + 2;
-            user.cur_bet_money = Number(messageText);
-            console.log(user.cur_bet_money);
-            user.save();
             User.findOne({ 'chat_id': messageChatId}).exec(dos);
-        });
-        return;
+        } else {
+            if (messageText.match(/спор/gi)) {
+                sendMessageByBot(messageChatId, "Введите некоторые данные для начала спора.");
+                User.findOne({ 'chat_id': messageChatId}).exec(function(err, user){
+                    user.create_bet = 1;
+                    user.save();
+                });
+            }
 
+            if (messageText === 'Yes') {
+                bot.sendMessage(messageChatId, 'I\'m too love you!', { caption: 'I\'m bot!' });
+            }
+         
+            if (messageText === 'No') {
+                bot.sendMessage(messageChatId, ':(', { caption: 'I\'m bot!' });
+            }
+
+            if (messageText == "auth") {
+                authorise(clientId, redirectUri, ["account-info"], NaN);
+            }
+
+            if (messageText === '/keys') {
+                var opts = {
+                    reply_to_message_id: msg.message_id,
+                    reply_markup: JSON.stringify({
+                        keyboard: [
+                            ['Я согласен на спор.'],
+                            ['Я отказываюсь участвовать в споре.'],
+                            ['Хочу изменить ставку.'],
+                            ['Хочу изменить суть спора.']
+                        ],
+                        one_time_keyboard: true
+                    })
+                };
+            }
+            
+            bot.sendMessage(messageChatId, 'Вы принимаете условия спора?', opts);
+            return;            
+        }
+    });
+});    
+
+function dos(err, user) {
+    console.log(user);
+    console.log(user.cur_bet_state);
+    if (Math.floor(user.cur_bet_state) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "Поделитесь со мной контактом того, с кем хотите поспорить.");
     }
-
-    if ((messageText.split()[0] == "нет") || (messageText.split()[0] == "комментарий")) {
-        var arr = messageText.split();
-        var str = arr.slice(1, arr.length).join();
-        console.log(str);
-        User.findOne({id: messageChatId}, function(err, user) {
-            user.cur_bet_state = user.cur_bet_state + 4;
-            user.cur_bet_text = str;
-            console.log(user.cur_bet_text);
-            user.save();
-            User.findOne({ 'chat_id': messageChatId}).exec(dos);
-        });
-        return;
+    if (Math.floor(user.cur_bet_state / 2) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "На какую сумму в рублях Вы хотите поспорить? Достаточно указать просто число.");
     }
-
-    function dos(err, user) {
-        console.log(user);
-        console.log(user.cur_bet_state);
-        if (Math.floor(user.cur_bet_state) % 2 == 0) {
-            sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
-        }
-        if (Math.floor(user.cur_bet_state / 2) % 2 == 0) {
-            sendMessageByBot(messageChatId, "На какую сумму в рублях Вы хотите поспорить? Достаточно указать просто число.");
-        }
-        if (Math.floor(user.cur_bet_state / 4) % 2 == 0) {
-            sendMessageByBot(messageChatId, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
-        }
-        if (user.cur_bet_state > 6) {
-            User.findOne({ _id: user._cur_bet_op }).exec(function (err, user) {
-                sendMessageByBot(user.chat_id, "WE DID IT, you know");
+    if (Math.floor(user.cur_bet_state / 4) % 2 == 0) {
+        sendMessageByBot(user.chat_id, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
+    }
+    if (user.cur_bet_state > 6) {
+        user.create_bet = 0;
+        user.cur_bet_state = 0;
+        user.save();
+        var new_bet = new Bet({user1: user._id, user2: user._cur_bet_op, money: user.cur_bet_money,
+            text: user.cur_bet_text, condition: -1});
+        new_bet.save();
+        Bet.findOne({ user1: user._id, user2: user._cur_bet_op }).exec(function(err, bet) {
+            User.findOne({_id: bet.user1}).exec(function(err, user) {
+                sendMessageByBot(user.chat_id, "мы тут мутим спор на " + bet.money + " рублей. Ты в деле?");
             });
-        }
+            User.findOne({_id: bet.user2}).exec(function(err, user) {
+                sendMessageByBot(user.chat_id, "мы тут мутим спор на " + bet.money + " рублей. Ты в деле?");
+            });
+        });
     }
-
-    User.findOne({ 'chat_id': messageChatId}).exec(dos);
-
-    console.log(msg);
-});
+}
 
 bot.on('contact', function(msg)
 {
