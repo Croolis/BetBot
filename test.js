@@ -40,7 +40,7 @@ function createNewUser(access_token){
             if (err) return console.error(err);
             else console.log("user created sucesfully")
                 });
-        console.log("access_token = "+)
+        console.log("access_token = "+ access_token)
 }
 
 http.createServer(function(req, res) {
