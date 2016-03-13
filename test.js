@@ -83,13 +83,14 @@ bot.getMe().then(function(me)
     var mongoose = require('mongoose');
 
     var userShema = mongoose.Schema({
+        _id: mongoose.Schema.Types.ObjectId,
         first_name: String,
         last_name: String,
         id: Number,
         chat_id: Number,
         cur_bet_state: Number,
         cur_bet_money: Number,
-        cur_bet_op: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+        _cur_bet_op: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
         cur_bet_text: String
     });
     var User = mongoose.model('User', userShema);
@@ -188,13 +189,12 @@ bot.on('text', function(msg)
             sendMessageByBot(messageChatId, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
         }
         if (user.cur_bet_state > 6) {
-            sendMessageByBot(messageChatId, "WE DID IT");
+            User.findOne({ _id: user._cur_bet_op }).exec(function (err, user) {
+                sendMessageByBot(user.chat_id, "WE DID IT, you know");
+            });
         }
     }
-    User.findOne({ 'chat_id': messageChatId}).exec(function(err, user) {
-        user.cur_bet_state = 0;
-        user.save();
-    });
+
     User.findOne({ 'chat_id': messageChatId}).exec(dos);
 
     console.log(msg);
@@ -212,8 +212,6 @@ bot.on('contact', function(msg)
 //поиск по базе данных
 
     function dos(err, user) {
-        console.log(user);
-        console.log(user.cur_bet_state);
         if (Math.floor(user.cur_bet_state) % 2 == 0) {
             sendMessageByBot(messageChatId, "Поделитесь со мной контактом того, с кем хотите поспорить.");
         }
@@ -224,7 +222,9 @@ bot.on('contact', function(msg)
             sendMessageByBot(messageChatId, "Не хотите указать каких-либо комментариев, чтобы не забыть, о чем был спор? Если да, то укажите их после слова 'комментарий'. Если нет, то так и скажите.");
         }
         if (user.cur_bet_state > 6) {
-            sendMessageByBot(messageChatId, "WE DID IT");
+            User.findOne({ _id: user._cur_bet_op }).exec(function (err, user) {
+                sendMessageByBot(user.chat_id, "WE DID IT, you know");
+            });
         }
     }
 
@@ -237,9 +237,9 @@ bot.on('contact', function(msg)
             sendMessageByBot(messageChatId, "Отлично, Вы добавили контакт, осталось еще чуть-чуть");
             User.findOne({id: messageChatId}, function(err, user) {
                 user.cur_bet_state = user.cur_bet_state + 1;
-                user.cur_bet_op = users[0]._id;
+                user._cur_bet_op = users[0]._id;
                 user.save();
-                User.findOne({ 'chat_id': messageChatId}).exec(dos);
+                User.findOne({ 'chat_id': user.chat_id}).exec(dos);
             });
         }
     })
